@@ -8,19 +8,38 @@
       background: green;
       border: 2px solid black;
     }
+
+    #pipe,
+    #bird,
+    #background {
+      display: None;
+    }
   </style>
+
+</head>
+
+<body>
+
+  <br>
+
+
+  <textarea id="textArea" style="visibility:hidden"></textarea>
+  <img id="pipe" width="10" src="sprites/pipe.png" alt="pipe">
+  <img id="bird" src="sprites/bird.png" alt="bird">
+  <img id="background" src="sprites/background.png" alt="background">
+
   <script>
     var myGamePiece;
 
     var myObstacle;
     var myObstacles = [];
     var myScore;
+    var score;
     var myBackground;
     var mySound;
     var textarea = document.getElementById('textArea');
 
     function startGame() {
-      //component(width, height, color, x, y)
       myGamePiece = new component(30, 30, "red", 10, 120);
       myScore = new component("30px", "Consolas", "black", 280, 40, "text")
       mySound = new sound("Sounds/FlappyBird_point.wav");
@@ -46,8 +65,14 @@
 
         this.gamestop = false;
         this.frameNo = 0;
-        //var inputInterval = Math.parseInt(document.getElementById("inputInterval").value);
-        //this.interval = setInterval(updateGameArena, inputInterval);
+        score = 0;
+
+        this.pipe_img = document.getElementById("pipe");
+        this.bird_img = document.getElementById("bird");
+        this.background_img = document.getElementById("background");
+
+
+
 
         clearInterval(this.interval);
         this.interval = setInterval(updateGameArena, 20);
@@ -71,7 +96,6 @@
 
       stop: function() {
         clearInterval(this.interval);
-        stopMove();
         this.gamestop = true;
       }
     }
@@ -94,20 +118,42 @@
       this.y = y;
 
       //gravity
-      this.gravity = 0.1;
+      this.gravity = 2.5;
       this.gravitySpeed = 0;
-      this.bounce = 0.6;
+      this.bounce = 0;
 
 
       this.update = function() {
         ctx = myGameArena.context;
         ctx.fillStyle = color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        if (color == "red") {
+          // Draw bird
+          ctx.drawImage(myGameArena.bird_img, this.x, this.y, this.width, this.height);
+
+        } else {
+          // Draw pipes
+          var pipe_height = myGameArena.pipe_img.height;
+          if (this.y == 0) {
+            //mirror the upper pipe
+            ctx.save();
+            ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+            ctx.rotate(Math.PI);
+
+            ctx.drawImage(myGameArena.pipe_img, -this.width / 2, -this.height / 2, this.width, pipe_height);
+
+            ctx.restore();
+
+          } else {
+
+            ctx.drawImage(myGameArena.pipe_img, this.x, this.y, this.width, pipe_height);
+          }
+        }
+
+
       }
       this.newPos = function() {
-        this.gravitySpeed += this.gravity;
-        this.x += this.speedX;
-        this.y += this.speedY + this.gravitySpeed;
+        this.speedY += this.gravity;
+        this.y += this.speedY;
 
         this.hitTop();
         this.hitBottom();
@@ -116,14 +162,20 @@
       this.hitTop = function() {
         if (this.y <= 0) {
           this.y = 0;
-          this.gravitySpeed = 0;
+          this.speedY = 0;
+        }
+        if (this.y <= 0) {
+          return true;
         }
       }
       this.hitBottom = function() {
         if (this.y > myGameArena.canvas.height - this.height) {
           this.y = myGameArena.canvas.height - this.height;
-          this.gravitySpeed = -(this.gravitySpeed * this.bounce);
+          this.speedY = -(this.speedY * this.bounce);
 
+        }
+        if (this.y >= myGameArena.canvas.height - this.height) {
+          return true;
         }
       }
 
@@ -158,21 +210,43 @@
 
     }
 
-    function updateGameArena() {
-      var x, y;
+    function isGameOver() {
+      if (myGamePiece.hitTop() || myGamePiece.hitBottom()) {
+        return true;
+      }
+
       for (i = 0; i < myObstacles.length; i += 1) {
         if (myGamePiece.crashWith(myObstacles[i])) {
-          this.crashSound = new sound("Sounds/FlappyBird_hit.wav");
-          this.crashSound.play();
-          myGameArena.stop();
-          return;
+          return true;
         }
       }
+      return false;
+
+    }
+
+    function updateGameArena() {
+
+
+      var x, y;
+      this.pointSound = new sound("Sounds/FlappyBird_point.wav");
+      this.crashSound = new sound("Sounds/FlappyBird_hit.wav");
+
+      if (isGameOver()) {
+        this.crashSound.play();
+        myGameArena.stop();
+        return;
+      }
+
+
+
+
 
       myGamePiece.speedX = 0;
       myGamePiece.speedY = 0;
 
       myGameArena.clear();
+
+      myGameArena.context.drawImage(myGameArena.background_img, 0, 0, 400, 400);
 
 
       myGameArena.frameNo += 1;
@@ -181,53 +255,41 @@
         minHeight = 20;
         maxHeight = 200;
         height = Math.floor(Math.random() * (maxHeight - minHeight + 1) + minHeight);
-        minGap = 75;
-        maxGap = 200;
+        minGap = 100;
+        maxGap = 150;
         gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
 
 
-        myObstacles.push(new component(10, height, "pink", x, 0));
-        myObstacles.push(new component(10, x - height - gap, "pink", x, height + gap))
+        myObstacles.push(new component(50, height, "pink", x, 0));
+        myObstacles.push(new component(50, x - height - gap, "pink", x, height + gap))
 
 
       }
       for (i = 0; i < myObstacles.length; i += 1) {
         myObstacles[i].x += -1;
         myObstacles[i].update();
+        if (myObstacles[i].x == myGamePiece.x) {
+          score += 1 / 2;
+          this.pointSound.play();
+        }
 
       }
-      if (myObstacles[0].x + myObstacles[0].width == myGamePiece.x) {
-        mySound.play();
-      }
-      if (myObstacles[0].x <= -10) {
+
+      if (myObstacles[0].x <= -myObstacles[0].width) {
         myObstacles.shift();
       }
       context = myGameArena.context;
       context.font = "30px Consolas"
       context.fillStyle = "black"
-      context.fillText("SCORE: " + myGameArena.frameNo, myGameArena.canvas.width - 180, 40)
+      context.fillText("SCORE: " + score, myGameArena.canvas.width - 180, 40)
 
 
-      if (myGameArena.key && myGameArena.key == 37) {
-        myGamePiece.speedX = -1;
-      }
-      if (myGameArena.key && myGameArena.key == 38) {
-        myGamePiece.speedY = -1;
+      if ((myGameArena.key && myGameArena.key == 38) ||
+        (myGameArena.key && myGameArena.key == 32)) {
+        myGamePiece.speedY = -10;
 
       }
-      if (myGameArena.key && myGameArena.key == 39) {
-        myGamePiece.speedX = 1;
-      }
-      if (myGameArena.key && myGameArena.key == 40) {
-        myGamePiece.speedY = 1;
 
-      }
-      if (myGameArena.key && myGameArena.key == 32) {
-        myGamePiece.gravitySpeed = -2.5;
-        //accelerate(-0.2);
-      } else {
-        //accelerate(0.1);
-      }
 
       myGamePiece.newPos();
       myGamePiece.update();
@@ -254,26 +316,6 @@
 
     }
 
-    function moveup() {
-      myGamePiece.speedY -= 1;
-    }
-
-    function movedown() {
-      myGamePiece.speedY += 1;
-    }
-
-    function moveleft() {
-      myGamePiece.speedX -= 1;
-    }
-
-    function moveright() {
-      myGamePiece.speedX += 1;
-    }
-
-    function stopMove() {
-      myGamePiece.speedX = 0;
-      myGamePiece.speedY = 0;
-    }
 
     function accelerate(n) {
       myGamePiece.gravity = n;
@@ -285,17 +327,10 @@
       }
     });
   </script>
-</head>
-
-<body>
   <script>
     startGame();
   </script>
   <br>
-  <button onmousedown="accelerate(-0.15)" onmouseup="accelerate(0.1)">MOVE</button>
-  <button onclick="startGame()">NEW GAME</button>
-  <br>
-  <textarea id="textArea" style="visibility:hidden"></textarea>
-  <br </body>
+</body>
 
 </html>
