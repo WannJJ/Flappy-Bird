@@ -86,6 +86,7 @@
     var myGameArena = {
       gamestop: false,
       canvas: document.createElement("canvas"),
+	  isJumping: false,
 	  frameNo: 0,
       start: function() {
         //xac dinh do rong vung 
@@ -107,13 +108,6 @@
 
 
         myObstacles = [];
-
-        window.addEventListener("keydown", function(e) {
-          myGameArena.key = e.keyCode;
-        });
-        window.addEventListener("keyup", function(e) {
-          myGameArena.key = false;
-        });
       },
       clear: function() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -337,11 +331,9 @@
       if (myObstacles.length > 0 && myObstacles[0].x <= -myObstacles[0].width) {
         myObstacles.shift();
       }
-	  //User keydown event handler
-	  if ((myGameArena.key && myGameArena.key == 38) ||
-        (myGameArena.key && myGameArena.key == 32)) {
+	  
+	  if(myGameArena.isJumping){
         myGamePiece.speedY = JUMP_STRENGTH;
-
       }
 	  myGamePiece.newPos();	
 	  
@@ -372,11 +364,21 @@
 		return imgElement;
 	}
 	
-    window.addEventListener("keydown", function(e) {
-      if (myGameArena.gamestop && e.which == 32) {
-        startGame();
-      }
-    });
+	//Add EventListener
+	//Bird jumps everytime user press Space or Enter
+	window.addEventListener("keydown", function(e) {
+		if(e.keyCode == 38 || e.keyCode == 32){
+			if(myGameArena.gamestop){
+				startGame();
+				
+			} else myGameArena.isJumping = true;
+		}
+	});
+	window.addEventListener("keyup", function(e) {
+		myGameArena.isJumping = false;
+	});
+	
+	
   </script>
   <script>
     startGame();
