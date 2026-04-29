@@ -378,6 +378,15 @@
 		myGameArena.isJumping = false;
 	});
 	
+	//Allow user to play game by mouse click
+	window.addEventListener("mousedown", function(e){
+		if(myGameArena.gamestop){
+			startGame();
+		} else myGameArena.isJumping = true;
+	});
+	window.addEventListener("mouseup", function(e){
+		myGameArena.isJumping = false;
+	});
 	
   </script>
   <script>
