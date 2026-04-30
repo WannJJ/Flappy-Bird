@@ -427,6 +427,18 @@
       window.addEventListener("mouseup", function (e) {
         myGameArena.isJumping = false;
       });
+
+      //Add touch features
+      window.addEventListener("touchstart", function (e) {
+        e.preventDefault();
+        if (myGameArena.gamestop) {
+          startGame();
+        } else myGameArena.isJumping = true;
+      });
+      window.addEventListener("touchend", function (e) {
+        e.preventDefault();
+        myGameArena.isJumping = false;
+      });
     </script>
     <script>
       startGame();
