@@ -1,398 +1,436 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
-<head>
-  <title>GAME</title>
-  <style>
-    canvas {
-      background: green;
-      border: 2px solid black;
-    }
-
-    #pipe,
-	#phoenix,
-    #bird, #bird_up, #bird_down,
-    #background,
-	#game_over{
-      display: None;
-    }
-  </style>
-
-</head>
-
-<body>
-
-  <br>
-
-
-  <textarea id="textArea" style="visibility:hidden"></textarea>
-  <img id="pipe" width="10" src="sprites/pipe.png" alt="pipe">
-  <img id="bird" src="sprites/bird.png" alt="bird">
-  <img id="bird_up" src="sprites/bird-upflap.png" alt="bird_up">
-  <img id="bird_down" src="sprites/bird-downflap.png" alt="bird_down">
-  <img id="background" src="sprites/background.png" alt="background">
-  <img id="game_over" src="sprites/gameover.png" alt="game over">
-  <img id="phoenix" src="sprites/phoenix.png" alt="">
-
-  <script>
-	// --- Cấu hình vật lý & Game ---
-	const CANVAS_WIDTH= 400;
-    const GRAVITY = 0.45*5;        // Gia tốc rơi
-    const JUMP_STRENGTH = -7.5*2 // Lực bật lên (âm vì toạ độ Y hướng xuống)
-    const MAX_FALL_SPEED = 13;   // Vận tốc rơi tối đa
-    const PIPE_SPEED = 3.5*3;      // Tốc độ di chuyển của ống nước sang trái
-    const PIPE_SPAWN_RATE = 60*1/3; // Số frame (khung hình) giữa mỗi lần tạo ống
-    const PIPE_GAP = 140;        // Khe hở giữa 2 ống nước trên và dưới
-	const PIPE_WIDTH = 50;
-	const BIRD_SIZE = 30;
-	const isPhoenix = false; //The bird is replaced by a phoenix, J4F
-	
-	var myGamePiece;
-	var fps = 50;
-    var myObstacles = [];
-    var score;
-    var myBackground;
-    var mySound;
-    var textarea = document.getElementById('textArea');
-	var pointSound = new Audio("Sounds/FlappyBird_point.wav");
-    var crashSound = new sound("Sounds/FlappyBird_hit.wav");
-	
-	let background_img = createImgElement("sprites/background.png"),
-		background_night_img = createImgElement("sprites/background-night.png");
-	let pipe_img = createImgElement("sprites/pipe.png"),
-		gameover_img = createImgElement("sprites/gameover.png"),
-		bird_img, bird_up_img, bird_down_img;
-	if(!isPhoenix){
-		bird_img = createImgElement("sprites/bird.png");
-		bird_up_img = createImgElement("sprites/bird-upflap.png");
-		bird_down_img = createImgElement("sprites/bird-downflap.png");
-	} else{
-		bird_img = createImgElement("sprites/phoenix.png");
-		bird_up_img = createImgElement("sprites/phoenix.png");
-		bird_down_img = createImgElement("sprites/phoenix.png")
-	}
-	let score_img_array = [];
-	for(let i=0; i<11; i++){
-		score_img_array[i] = createImgElement(`sprites/${i}.png`);
-	}
-		
-    function startGame() {
-      myGamePiece = new component(BIRD_SIZE, BIRD_SIZE, "red", BIRD_SIZE/3, CANVAS_WIDTH*0.4);
-      mySound = new sound("Sounds/FlappyBird_point.wav");
-
-      myGameArena.start();
-    }
-
-    var myGameArena = {
-      gamestop: false,
-      canvas: document.createElement("canvas"),
-	  isJumping: false,
-	  frameNo: 0,
-      start: function() {
-        //xac dinh do rong vung 
-
-        this.canvas.width = CANVAS_WIDTH;
-        this.canvas.height = CANVAS_WIDTH;
-
-        //noi dung bne trong vung khong gian, de ve doi tuong
-        this.context = this.canvas.getContext("2d");
-
-        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
-
-        this.gamestop = false;
-        this.frameNo = 0;
-        score = 0;
-        
-		clearInterval(this.interval);
-        this.interval = setInterval(updateGameArena, fps);
-
-
-        myObstacles = [];
-      },
-      clear: function() {
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      },
-	  render: function(){
-		myGameArena.clear();
-		myGameArena.context.drawImage( (score%20<10) ? background_img : background_night_img,
-										0,
-										0,
-										CANVAS_WIDTH,
-										CANVAS_WIDTH
-										);
-		for (i = 0; i < myObstacles.length; i += 1) {
-			myObstacles[i].update();
-		}
-		
-		//Show score
-		  let scoreText = score.toString();
-		  for(let i = 0; i<scoreText.length; i++){
-			let digit = scoreText[i];
-			myGameArena.context.drawImage(score_img_array[parseInt(digit)],
-											myGameArena.canvas.width - (length - i + 3)*BIRD_SIZE, //display up to 3 digits
-											BIRD_SIZE/2,
-											BIRD_SIZE,
-											BIRD_SIZE);
-		  }
-		  
-		  myGamePiece.update();
-	  },
-      stop: function() {
-		this.gamestop = true;
-        clearInterval(this.interval);
-		myObstacles = [];
-		this.context.drawImage(gameover_img, 0, CANVAS_WIDTH*0.3, CANVAS_WIDTH, CANVAS_WIDTH/5);
-      },
-    }
-
-    function everyInterval(n) {
-      if ((myGameArena.frameNo / n) % 1 == 0) {
-        return true;
+  <head>
+    <title>GAME</title>
+    <style>
+      canvas {
+        background: green;
+        border: 2px solid black;
       }
-      return false;
-    }
 
-    function component(width, height, color, x, y) {
-      this.width = width;
-      this.height = height;
-      this.speedX = 0;
-      this.speedY = 0;
+      #pipe,
+      #phoenix,
+      #bird,
+      #bird_up,
+      #bird_down,
+      #background,
+      #game_over {
+        display: None;
+      }
+    </style>
+  </head>
 
-      this.color = color;
-      this.x = x;
-      this.y = y;
+  <body>
+    <br />
 
-      //gravity
-      this.gravity = GRAVITY;
-      this.gravitySpeed = 0;
-      this.bounce = 0;
+    <textarea id="textArea" style="visibility: hidden"></textarea>
+    <img id="pipe" width="10" src="sprites/pipe.png" alt="pipe" />
+    <img id="bird" src="sprites/bird.png" alt="bird" />
+    <img id="bird_up" src="sprites/bird-upflap.png" alt="bird_up" />
+    <img id="bird_down" src="sprites/bird-downflap.png" alt="bird_down" />
+    <img id="background" src="sprites/background.png" alt="background" />
+    <img id="game_over" src="sprites/gameover.png" alt="game over" />
+    <img id="phoenix" src="sprites/phoenix.png" alt="" />
 
+    <script>
+      // --- Cấu hình vật lý & Game ---
+      const CANVAS_WIDTH = 400;
+      const GRAVITY = 0.45 * 5; // Gia tốc rơi
+      const JUMP_STRENGTH = -7.5 * 2; // Lực bật lên (âm vì toạ độ Y hướng xuống)
+      const MAX_FALL_SPEED = 13; // Vận tốc rơi tối đa
+      const PIPE_SPEED = 3.5 * 3; // Tốc độ di chuyển của ống nước sang trái
+      const PIPE_SPAWN_RATE = (60 * 1) / 3; // Số frame (khung hình) giữa mỗi lần tạo ống
+      const PIPE_GAP = 140; // Khe hở giữa 2 ống nước trên và dưới
+      const PIPE_WIDTH = 50;
+      const BIRD_SIZE = 30;
+      const isPhoenix = false; //The bird is replaced by a phoenix, J4F
 
-      this.update = function() {
-        ctx = myGameArena.context;
-        ctx.fillStyle = color;
-		if (color == "red") {
-          // Draw bird
-		  var rotation = 0.4 * Math.PI * (this.speedY / MAX_FALL_SPEED);
-		  rotation = Math.min(80 * Math.PI / 180, rotation);
-		  rotation = Math.max(-40 * Math.PI / 180, rotation);
-		  if(this.speedY > MAX_FALL_SPEED*0.6){
-			ctx.save()
-			ctx .translate(this.x + this.width / 2, this.y + this.height / 2);
-			ctx.rotate(rotation);
-			ctx.drawImage(bird_down_img, this.width * -0.5, this.height * -0.5, this.width, this.height);
-			ctx.restore();			
-		  } else if(this.speedY < JUMP_STRENGTH*0.3){
-			ctx.save();
-			ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-			ctx.rotate(rotation);
-			ctx.drawImage(bird_up_img, this.width * -0.5, this.height * -0.5, this.width, this.height);
-			ctx.restore();
-		  } else ctx.drawImage(bird_img, this.x, this.y, this.width, this.height);
+      var myGamePiece;
+      var fps = 50;
+      var myObstacles = [];
+      var score;
+      var myBackground;
+      var mySound;
+      var textarea = document.getElementById("textArea");
+      var pointSound = new Audio("Sounds/FlappyBird_point.wav");
+      var crashSound = new sound("Sounds/FlappyBird_hit.wav");
 
-        } else {
-          // Draw pipes
-          var pipe_height = pipe_img.height;
-          if (this.y == 0) {
-            //mirror the upper pipe
-            ctx.save();
-            ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-            ctx.rotate(Math.PI);
+      let background_img = createImgElement("sprites/background.png"),
+        background_night_img = createImgElement("sprites/background-night.png");
+      let pipe_img = createImgElement("sprites/pipe.png"),
+        gameover_img = createImgElement("sprites/gameover.png"),
+        bird_img,
+        bird_up_img,
+        bird_down_img;
+      if (!isPhoenix) {
+        bird_img = createImgElement("sprites/bird.png");
+        bird_up_img = createImgElement("sprites/bird-upflap.png");
+        bird_down_img = createImgElement("sprites/bird-downflap.png");
+      } else {
+        bird_img = createImgElement("sprites/phoenix.png");
+        bird_up_img = createImgElement("sprites/phoenix.png");
+        bird_down_img = createImgElement("sprites/phoenix.png");
+      }
+      let score_img_array = [];
+      for (let i = 0; i < 11; i++) {
+        score_img_array[i] = createImgElement(`sprites/${i}.png`);
+      }
 
-            ctx.drawImage(pipe_img, -this.width / 2, -this.height / 2, this.width, pipe_height);
+      function startGame() {
+        myGamePiece = new component(
+          BIRD_SIZE,
+          BIRD_SIZE,
+          "red",
+          BIRD_SIZE / 3,
+          CANVAS_WIDTH * 0.4,
+        );
+        mySound = new sound("Sounds/FlappyBird_point.wav");
 
-            ctx.restore();
+        myGameArena.start();
+      }
 
+      var myGameArena = {
+        gamestop: false,
+        canvas: document.createElement("canvas"),
+        isJumping: false,
+        frameNo: 0,
+        start: function () {
+          //xac dinh do rong vung
+
+          this.canvas.width = CANVAS_WIDTH;
+          this.canvas.height = CANVAS_WIDTH;
+
+          //noi dung bne trong vung khong gian, de ve doi tuong
+          this.context = this.canvas.getContext("2d");
+
+          document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+
+          this.gamestop = false;
+          this.frameNo = 0;
+          score = 0;
+
+          clearInterval(this.interval);
+          this.interval = setInterval(updateGameArena, fps);
+
+          myObstacles = [];
+        },
+        clear: function () {
+          this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        },
+        render: function () {
+          myGameArena.clear();
+          myGameArena.context.drawImage(
+            score % 20 < 10 ? background_img : background_night_img,
+            0,
+            0,
+            CANVAS_WIDTH,
+            CANVAS_WIDTH,
+          );
+          for (i = 0; i < myObstacles.length; i += 1) {
+            myObstacles[i].update();
+          }
+
+          //Show score
+          let scoreText = score.toString();
+          for (let i = 0; i < scoreText.length; i++) {
+            let digit = scoreText[i];
+            myGameArena.context.drawImage(
+              score_img_array[parseInt(digit)],
+              myGameArena.canvas.width - (length - i + 3) * BIRD_SIZE, //display up to 3 digits
+              BIRD_SIZE / 2,
+              BIRD_SIZE,
+              BIRD_SIZE,
+            );
+          }
+
+          myGamePiece.update();
+        },
+        stop: function () {
+          this.gamestop = true;
+          clearInterval(this.interval);
+          myObstacles = [];
+          this.context.drawImage(
+            gameover_img,
+            0,
+            CANVAS_WIDTH * 0.3,
+            CANVAS_WIDTH,
+            CANVAS_WIDTH / 5,
+          );
+        },
+      };
+
+      function everyInterval(n) {
+        if ((myGameArena.frameNo / n) % 1 == 0) {
+          return true;
+        }
+        return false;
+      }
+
+      function component(width, height, color, x, y) {
+        this.width = width;
+        this.height = height;
+        this.speedX = 0;
+        this.speedY = 0;
+
+        this.color = color;
+        this.x = x;
+        this.y = y;
+
+        //gravity
+        this.gravity = GRAVITY;
+        this.gravitySpeed = 0;
+        this.bounce = 0;
+
+        this.update = function () {
+          ctx = myGameArena.context;
+          ctx.fillStyle = color;
+          if (color == "red") {
+            // Draw bird
+            var rotation = 0.4 * Math.PI * (this.speedY / MAX_FALL_SPEED);
+            rotation = Math.min((80 * Math.PI) / 180, rotation);
+            rotation = Math.max((-40 * Math.PI) / 180, rotation);
+            if (this.speedY > MAX_FALL_SPEED * 0.6) {
+              ctx.save();
+              ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+              ctx.rotate(rotation);
+              ctx.drawImage(
+                bird_down_img,
+                this.width * -0.5,
+                this.height * -0.5,
+                this.width,
+                this.height,
+              );
+              ctx.restore();
+            } else if (this.speedY < JUMP_STRENGTH * 0.3) {
+              ctx.save();
+              ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+              ctx.rotate(rotation);
+              ctx.drawImage(
+                bird_up_img,
+                this.width * -0.5,
+                this.height * -0.5,
+                this.width,
+                this.height,
+              );
+              ctx.restore();
+            } else
+              ctx.drawImage(bird_img, this.x, this.y, this.width, this.height);
           } else {
+            // Draw pipes
+            var pipe_height = pipe_img.height;
+            if (this.y == 0) {
+              //mirror the upper pipe
+              ctx.save();
+              ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+              ctx.rotate(Math.PI);
 
-            ctx.drawImage(pipe_img, this.x, this.y, this.width, pipe_height);
+              ctx.drawImage(
+                pipe_img,
+                -this.width / 2,
+                -this.height / 2,
+                this.width,
+                pipe_height,
+              );
+
+              ctx.restore();
+            } else {
+              ctx.drawImage(pipe_img, this.x, this.y, this.width, pipe_height);
+            }
+          }
+        };
+        this.newPos = function () {
+          this.speedY += this.gravity;
+          this.speedY = Math.min(this.speedY, MAX_FALL_SPEED);
+          this.y += this.speedY;
+
+          this.hitTop();
+          this.hitBottom();
+        };
+
+        this.hitTop = function () {
+          if (this.y <= 0) {
+            this.y = 0;
+            this.speedY = 0;
+          }
+          if (this.y <= 0) {
+            return true;
+          }
+        };
+        this.hitBottom = function () {
+          if (this.y > myGameArena.canvas.height - this.height) {
+            this.y = myGameArena.canvas.height - this.height;
+            this.speedY = -(this.speedY * this.bounce);
+          }
+          if (this.y >= myGameArena.canvas.height - this.height) {
+            return true;
+          }
+        };
+        this.crashWith = function (otherobj) {
+          var myLeft = this.x;
+          var myRight = this.x + this.width;
+          var myTop = this.y;
+          var myBottom = this.y + this.height;
+
+          var otherLeft = otherobj.x;
+          var otherRight = otherobj.x + otherobj.width;
+          var otherTop = otherobj.y;
+          var otherBottom = otherobj.y + otherobj.height;
+
+          var crash = true;
+          if (
+            myBottom < otherTop ||
+            myTop > otherBottom ||
+            myRight < otherLeft ||
+            myLeft > otherRight
+          ) {
+            crash = false;
+          }
+
+          var textArea = document.getElementById("textArea");
+          text = "crash: " + (crash ? "CRASHED!!" : "not yet") + "\n";
+          //text += "Points: " + myGameArena.frameNo;
+          textArea.innerHTML = text;
+
+          return crash;
+        };
+      }
+
+      function isGameOver() {
+        if (myGamePiece.hitTop() || myGamePiece.hitBottom()) {
+          return true;
+        }
+
+        for (i = 0; i < myObstacles.length; i += 1) {
+          if (myGamePiece.crashWith(myObstacles[i])) {
+            return true;
           }
         }
-
-
-      }
-      this.newPos = function() {
-        this.speedY += this.gravity;
-		this.speedY = Math.min(this.speedY, MAX_FALL_SPEED);
-        this.y += this.speedY;
-
-        this.hitTop();
-        this.hitBottom();
+        return false;
       }
 
-      this.hitTop = function() {
-        if (this.y <= 0) {
-          this.y = 0;
-          this.speedY = 0;
-        }
-        if (this.y <= 0) {
-          return true;
-        }
-      }
-      this.hitBottom = function() {
-        if (this.y > myGameArena.canvas.height - this.height) {
-          this.y = myGameArena.canvas.height - this.height;
-          this.speedY = -(this.speedY * this.bounce);
+      function updateGameArena() {
+        var x, y;
+        myGameArena.frameNo += 1;
 
+        //when game is over, bird keep falling down until hitting the ground
+        if (myGameArena.gamestop) {
+          if (!myGamePiece.hitBottom()) {
+            myGamePiece.newPos();
+            myGamePiece.newPos();
+            myGameArena.render();
+          } else {
+            myGameArena.stop();
+          }
+          return;
         }
-        if (this.y >= myGameArena.canvas.height - this.height) {
-          return true;
-        }
-      }
-      this.crashWith = function(otherobj) {
-        var myLeft = this.x;
-        var myRight = this.x + this.width;
-        var myTop = this.y;
-        var myBottom = this.y + this.height;
-
-        var otherLeft = otherobj.x;
-        var otherRight = otherobj.x + otherobj.width;
-        var otherTop = otherobj.y;
-        var otherBottom = otherobj.y + otherobj.height;
-
-        var crash = true;
-        if ((myBottom < otherTop) ||
-          (myTop > otherBottom) ||
-          (myRight < otherLeft) ||
-          (myLeft > otherRight)) {
-          crash = false;
+        if (isGameOver()) {
+          myGameArena.gamestop = true;
+          myGamePiece.speedY = JUMP_STRENGTH;
+          crashSound.play();
+          return;
         }
 
-        var textArea = document.getElementById('textArea');
-        text = "crash: " + (crash ? "CRASHED!!" : "not yet") + "\n";
-        //text += "Points: " + myGameArena.frameNo;
-        textArea.innerHTML = text;
+        //Generate pipes
+        if (myGameArena.frameNo == 1 || everyInterval(PIPE_SPAWN_RATE)) {
+          x = myGameArena.canvas.width;
+          minHeight = 20;
+          maxHeight = 200;
+          height = Math.floor(
+            Math.random() * (maxHeight - minHeight + 1) + minHeight,
+          );
+          minGap = PIPE_GAP;
+          maxGap = PIPE_GAP * 1.1;
+          gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
 
-        return crash;
-      }
-    }
-
-    function isGameOver() {
-      if (myGamePiece.hitTop() || myGamePiece.hitBottom()) {
-        return true;
-      }
-	  
-      for (i = 0; i < myObstacles.length; i += 1) {
-        if (myGamePiece.crashWith(myObstacles[i])) {
-          return true;
+          myObstacles.push(new component(PIPE_WIDTH, height, "pink", x, 0));
+          myObstacles.push(
+            new component(
+              PIPE_WIDTH,
+              x - height - gap,
+              "pink",
+              x,
+              height + gap,
+            ),
+          );
         }
-      }
-      return false;
-
-    }
-
-    function updateGameArena() {
-      var x, y;
-	  myGameArena.frameNo += 1;
-      
-	  //when game is over, bird keep falling down until hitting the ground
-	  if(myGameArena.gamestop){
-		if(!myGamePiece.hitBottom()){
-			myGamePiece.newPos();
-			myGamePiece.newPos();
-			myGameArena.render();
-		} else{		
-			myGameArena.stop();
-		}
-		return;
-	  }
-      if (isGameOver()) {
-		myGameArena.gamestop = true;
-		myGamePiece.speedY = JUMP_STRENGTH;
-		crashSound.play();
-        return;
-      }
-	  
-	  //Generate pipes
-      if (myGameArena.frameNo == 1 || everyInterval(PIPE_SPAWN_RATE)) {
-        x = myGameArena.canvas.width;
-        minHeight = 20;
-        maxHeight = 200;
-        height = Math.floor(Math.random() * (maxHeight - minHeight + 1) + minHeight);
-        minGap = PIPE_GAP;
-        maxGap = PIPE_GAP*1.1;
-        gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
-
-
-        myObstacles.push(new component(PIPE_WIDTH, height, "pink", x, 0));
-        myObstacles.push(new component(PIPE_WIDTH, x - height - gap, "pink", x, height + gap))
-      }
-      //Update score
-	  for (i = 0; i < myObstacles.length; i += 1) {
-        myObstacles[i].x += -1*PIPE_SPEED;
-        //myObstacles[i].update();
-        if (i%2 == 0 && myObstacles[i].x <= myGamePiece.x && myObstacles[i].x + PIPE_SPEED > myGamePiece.x) {
-          score += 1;
-          pointSound.play();
+        //Update score
+        for (i = 0; i < myObstacles.length; i += 1) {
+          myObstacles[i].x += -1 * PIPE_SPEED;
+          //myObstacles[i].update();
+          if (
+            i % 2 == 0 &&
+            myObstacles[i].x <= myGamePiece.x &&
+            myObstacles[i].x + PIPE_SPEED > myGamePiece.x
+          ) {
+            score += 1;
+            pointSound.play();
+          }
+        }
+        // Remove old pipes from list Obstacles
+        if (
+          myObstacles.length > 0 &&
+          myObstacles[0].x <= -myObstacles[0].width
+        ) {
+          myObstacles.shift();
         }
 
-      }
-		// Remove old pipes from list Obstacles
-      if (myObstacles.length > 0 && myObstacles[0].x <= -myObstacles[0].width) {
-        myObstacles.shift();
-      }
-	  
-	  if(myGameArena.isJumping){
-        myGamePiece.speedY = JUMP_STRENGTH;
-      }
-	  myGamePiece.newPos();	
-	  
-	  myGameArena.render();
-    }
+        if (myGameArena.isJumping) {
+          myGamePiece.speedY = JUMP_STRENGTH;
+        }
+        myGamePiece.newPos();
 
-    function sound(src) {
-      this.sound = document.createElement("audio");
-      this.sound.src = src;
-      this.sound.setAttribute("preload", "auto");
-      this.sound.setAttribute("controls", "none");
-      this.sound.style.display = "none";
-      document.body.appendChild(this.sound);
-
-      this.play = function() {
-        this.sound.play();
-      }
-      this.stop = function() {
-        this.sound.pause();
+        myGameArena.render();
       }
 
-    }
-	function createImgElement(src){
-		let imgElement = document.createElement("img");
-		imgElement.src = src;
-		imgElement.style.display = "none";
-		document.body.appendChild(imgElement);
-		return imgElement;
-	}
-	
-	//Add EventListener
-	//Bird jumps everytime user press Space or Enter
-	window.addEventListener("keydown", function(e) {
-		if(e.keyCode == 38 || e.keyCode == 32){
-			if(myGameArena.gamestop){
-				startGame();
-				
-			} else myGameArena.isJumping = true;
-		}
-	});
-	window.addEventListener("keyup", function(e) {
-		myGameArena.isJumping = false;
-	});
-	
-	//Allow user to play game by mouse click
-	window.addEventListener("mousedown", function(e){
-		if(myGameArena.gamestop){
-			startGame();
-		} else myGameArena.isJumping = true;
-	});
-	window.addEventListener("mouseup", function(e){
-		myGameArena.isJumping = false;
-	});
-	
-  </script>
-  <script>
-    startGame();
-  </script>
-  <br>
-</body>
+      function sound(src) {
+        this.sound = document.createElement("audio");
+        this.sound.src = src;
+        this.sound.setAttribute("preload", "auto");
+        this.sound.setAttribute("controls", "none");
+        this.sound.style.display = "none";
+        document.body.appendChild(this.sound);
 
+        this.play = function () {
+          this.sound.play();
+        };
+        this.stop = function () {
+          this.sound.pause();
+        };
+      }
+      function createImgElement(src) {
+        let imgElement = document.createElement("img");
+        imgElement.src = src;
+        imgElement.style.display = "none";
+        document.body.appendChild(imgElement);
+        return imgElement;
+      }
+
+      //Add EventListener
+      //Bird jumps everytime user press Space or Enter
+      window.addEventListener("keydown", function (e) {
+        if (e.keyCode == 38 || e.keyCode == 32) {
+          if (myGameArena.gamestop) {
+            startGame();
+          } else myGameArena.isJumping = true;
+        }
+      });
+      window.addEventListener("keyup", function (e) {
+        myGameArena.isJumping = false;
+      });
+
+      //Allow user to play game by mouse click
+      window.addEventListener("mousedown", function (e) {
+        if (myGameArena.gamestop) {
+          startGame();
+        } else myGameArena.isJumping = true;
+      });
+      window.addEventListener("mouseup", function (e) {
+        myGameArena.isJumping = false;
+      });
+    </script>
+    <script>
+      startGame();
+    </script>
+    <br />
+  </body>
 </html>
